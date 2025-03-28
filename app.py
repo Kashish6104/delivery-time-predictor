@@ -2,22 +2,37 @@ from flask import Flask, request, jsonify
 import pickle
 import pandas as pd
 import numpy as np
+import os
 
 # Initialize Flask app
 app = Flask(__name__)
 
+# File paths
+model_path = 'model.pkl'
+model_columns_path = 'model_columns.pkl'
+
 # Load the trained model
-with open('model.pkl', 'rb') as f:
-    model = pickle.load(f)
+if os.path.exists(model_path):
+    with open(model_path, 'rb') as f:
+        model = pickle.load(f)
+else:
+    model = None  # Set model to None if file is not found
 
 # Load the model's training columns if saved separately
-with open('model_columns.pkl', 'rb') as f:
-    model_columns = pickle.load(f)
+if os.path.exists(model_columns_path):
+    with open(model_columns_path, 'rb') as f:
+        model_columns = pickle.load(f)
+else:
+    model_columns = None  # Set model_columns to None if file is not found
 
 # Route for predicting delivery time
 @app.route('/predict', methods=['POST'])
 def predict():
     try:
+        # Ensure model and model columns are loaded
+        if model is None or model_columns is None:
+            return jsonify({'error': 'Model or model columns file not found. Please ensure both model.pkl and model_columns.pkl are available.'}), 500
+        
         # Get JSON data from the request
         data = request.json
         
